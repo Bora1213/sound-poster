@@ -74,5 +74,42 @@ function draw() {
         
     }
 }
+let lyrics = []; 
+
+fetch('lyrics.lrc')
+    .then(response => response.text())
+    .then(text => {
+        lyrics = parseLRC(text);
+    });
+
+function parseLRC(lrcText) {
+    const lines = lrcText.split('\n');
+    const result = [];
+    const timeReg = /\[(\d{2}):(\d{2}\.\d{2})\]/;
+    for (let line of lines) {
+        const match = timeReg.exec(line);
+        if (match) {
+            const minutes = parseInt(match[1]);
+            const seconds = parseFloat(match[2]);
+            const time = minutes * 60 + seconds;
+            const text = line.replace(timeReg, '').trim();
+            result.push({ time, text });
+        }
+    }
+    return result;
+}
+
+audio.ontimeupdate = function() {
+    if (lyrics.length === 0) {
+        return;
+    }
+    const currentTime = audio.currentTime;
+    for (let i = 0; i < lyrics.length; i++) {
+        if (currentTime >= lyrics[i].time && (i === lyrics.length - 1 || currentTime < lyrics[i + 1].time)) {
+            document.getElementById('current-lyric').innerText = lyrics[i].text;
+            break;
+        }
+    }
+};
 
 draw();
